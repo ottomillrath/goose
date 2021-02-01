@@ -21,6 +21,7 @@ type MigrationRecord struct {
 
 // Migration struct.
 type Migration struct {
+	Service    string
 	Version    int64
 	Next       int64  // next version, or -1 if none
 	Previous   int64  // previous version, -1 if none
@@ -64,7 +65,7 @@ func (m *Migration) run(db *sql.DB, direction bool) error {
 			return errors.Wrapf(err, "ERROR %v: failed to parse SQL migration file", filepath.Base(m.Source))
 		}
 
-		if err := runSQLMigration(db, statements, useTx, m.Version, direction); err != nil {
+		if err := runSQLMigration(db, statements, useTx, m.Service, m.Version, direction); err != nil {
 			return errors.Wrapf(err, "ERROR %v: failed to run SQL migration", filepath.Base(m.Source))
 		}
 
@@ -76,7 +77,7 @@ func (m *Migration) run(db *sql.DB, direction bool) error {
 
 	case ".go":
 		if !m.Registered {
-			return errors.Errorf("ERROR %v: failed to run Go migration: Go functions must be registered and built into a custom binary (see https://github.com/pressly/goose/tree/master/examples/go-migrations)", m.Source)
+			return errors.Errorf("ERROR %v: failed to run Go migration: Go functions must be registered and built into a custom binary (see https://github.com/ottomillrath/goose/tree/master/examples/go-migrations)", m.Source)
 		}
 		tx, err := db.Begin()
 		if err != nil {
@@ -97,12 +98,12 @@ func (m *Migration) run(db *sql.DB, direction bool) error {
 		}
 
 		if direction {
-			if _, err := tx.Exec(GetDialect().insertVersionSQL(), m.Version, direction); err != nil {
+			if _, err := tx.Exec(GetDialect().insertVersionSQL(m.Service), m.Version, direction); err != nil {
 				tx.Rollback()
 				return errors.Wrap(err, "ERROR failed to execute transaction")
 			}
 		} else {
-			if _, err := tx.Exec(GetDialect().deleteVersionSQL(), m.Version); err != nil {
+			if _, err := tx.Exec(GetDialect().deleteVersionSQL(m.Service), m.Version); err != nil {
 				tx.Rollback()
 				return errors.Wrap(err, "ERROR failed to execute transaction")
 			}

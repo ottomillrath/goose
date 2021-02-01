@@ -6,11 +6,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/pressly/goose"
+	"github.com/ottomillrath/goose"
 )
 
 var (
 	flags      = flag.NewFlagSet("goose", flag.ExitOnError)
+	service    = flags.String("service", "default", "service migration files")
 	dir        = flags.String("dir", ".", "directory with migration files")
 	table      = flags.String("table", "goose_db_version", "migrations table name")
 	verbose    = flags.Bool("v", false, "enable verbose mode")
@@ -44,12 +45,12 @@ func main() {
 
 	switch args[0] {
 	case "create":
-		if err := goose.Run("create", nil, *dir, args[1:]...); err != nil {
+		if err := goose.Run("create", nil, *service, *dir, args[1:]...); err != nil {
 			log.Fatalf("goose run: %v", err)
 		}
 		return
 	case "fix":
-		if err := goose.Run("fix", nil, *dir); err != nil {
+		if err := goose.Run("fix", nil, *service, *dir); err != nil {
 			log.Fatalf("goose run: %v", err)
 		}
 		return

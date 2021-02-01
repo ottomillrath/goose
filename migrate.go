@@ -143,7 +143,7 @@ func AddNamedMigration(filename string, up func(*sql.Tx) error, down func(*sql.T
 
 // CollectMigrations returns all the valid looking migration scripts in the
 // migrations folder and go func registry, and key them by version.
-func CollectMigrations(dirpath string, current, target int64) (Migrations, error) {
+func CollectMigrations(service, dirpath string, current, target int64) (Migrations, error) {
 	if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("%s directory does not exist", dirpath)
 	}
@@ -161,7 +161,7 @@ func CollectMigrations(dirpath string, current, target int64) (Migrations, error
 			return nil, err
 		}
 		if versionFilter(v, current, target) {
-			migration := &Migration{Version: v, Next: -1, Previous: -1, Source: file}
+			migration := &Migration{Service: service, Version: v, Next: -1, Previous: -1, Source: file}
 			migrations = append(migrations, migration)
 		}
 	}
@@ -194,7 +194,7 @@ func CollectMigrations(dirpath string, current, target int64) (Migrations, error
 		}
 
 		if versionFilter(v, current, target) {
-			migration := &Migration{Version: v, Next: -1, Previous: -1, Source: file, Registered: false}
+			migration := &Migration{Service: service, Version: v, Next: -1, Previous: -1, Source: file, Registered: false}
 			migrations = append(migrations, migration)
 		}
 	}
@@ -236,10 +236,10 @@ func versionFilter(v, current, target int64) bool {
 
 // EnsureDBVersion retrieves the current version for this DB.
 // Create and initialize the DB version table if it doesn't exist.
-func EnsureDBVersion(db *sql.DB) (int64, error) {
-	rows, err := GetDialect().dbVersionQuery(db)
+func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
+	rows, err := GetDialect().dbVersionQuery(db, service)
 	if err != nil {
-		return 0, createVersionTable(db)
+		return 0, createVersionTable(db, service)
 	}
 	defer rows.Close()
 
@@ -285,7 +285,7 @@ func EnsureDBVersion(db *sql.DB) (int64, error) {
 
 // Create the db version table
 // and insert the initial 0 value into it
-func createVersionTable(db *sql.DB) error {
+func createVersionTable(db *sql.DB, service string) error {
 	txn, err := db.Begin()
 	if err != nil {
 		return err
@@ -300,7 +300,7 @@ func createVersionTable(db *sql.DB) error {
 
 	version := 0
 	applied := true
-	if _, err := txn.Exec(d.insertVersionSQL(), version, applied); err != nil {
+	if _, err := txn.Exec(d.insertVersionSQL(service), version, applied); err != nil {
 		txn.Rollback()
 		return err
 	}
@@ -309,8 +309,8 @@ func createVersionTable(db *sql.DB) error {
 }
 
 // GetDBVersion is an alias for EnsureDBVersion, but returns -1 in error.
-func GetDBVersion(db *sql.DB) (int64, error) {
-	version, err := EnsureDBVersion(db)
+func GetDBVersion(db *sql.DB, service string) (int64, error) {
+	version, err := EnsureDBVersion(db, service)
 	if err != nil {
 		return -1, err
 	}
