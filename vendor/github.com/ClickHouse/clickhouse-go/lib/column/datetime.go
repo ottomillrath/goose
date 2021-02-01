@@ -11,7 +11,7 @@ type DateTime struct {
 	Timezone *time.Location
 }
 
-func (dt *DateTime) Read(decoder *binary.Decoder) (interface{}, error) {
+func (dt *DateTime) Read(decoder *binary.Decoder, isNull bool) (interface{}, error) {
 	sec, err := decoder.Int32()
 	if err != nil {
 		return nil, err
@@ -82,6 +82,6 @@ func (dt *DateTime) parse(value string) (int64, error) {
 		time.Time(tv).Hour(),
 		time.Time(tv).Minute(),
 		time.Time(tv).Second(),
-		0, time.UTC,
+		0, time.Local,    //use local timzone when insert into clickhouse
 	).Unix(), nil
 }

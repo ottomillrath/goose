@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	flags = flag.NewFlagSet("goose", flag.ExitOnError)
-	dir   = flags.String("dir", ".", "directory with migration files")
+	flags   = flag.NewFlagSet("goose", flag.ExitOnError)
+	dir     = flags.String("dir", ".", "directory with migration files")
+	service = flags.String("service", "default", "")
 )
 
 func main() {
@@ -44,7 +45,7 @@ func main() {
 		arguments = append(arguments, args[3:]...)
 	}
 
-	if err := goose.Run(command, db, *dir, arguments...); err != nil {
+	if err := goose.Run(command, db, *service, *dir, arguments...); err != nil {
 		log.Fatalf("goose %v: %v", command, err)
 	}
 }
