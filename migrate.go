@@ -2,6 +2,7 @@ package goose
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -239,8 +240,7 @@ func versionFilter(v, current, target int64) bool {
 func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
 	rows, err := GetDialect().dbVersionQuery(db, service)
 	if err != nil {
-		ct := (err == sql.ErrNoRows)
-		return 0, createVersionTable(db, service, ct)
+		return 0, createVersionTable(db, service, errors.Is(err, sql.ErrNoRows))
 	}
 	defer rows.Close()
 
