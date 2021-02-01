@@ -9,8 +9,8 @@ import (
 
 const seqVersionTemplate = "%05v"
 
-func Fix(dir string) error {
-	migrations, err := CollectMigrations(dir, minVersion, maxVersion)
+func Fix(service, dir string) error {
+	migrations, err := CollectMigrations(service, dir, minVersion, maxVersion)
 	if err != nil {
 		return err
 	}

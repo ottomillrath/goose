@@ -12,6 +12,7 @@ dist:
 vendor:
 	mv _go.mod go.mod
 	mv _go.sum go.sum
+	go get -u github.com/ottomillrath/goose@master
 	GO111MODULE=on go build -o ./bin/goose ./cmd/goose
 	GO111MODULE=on go mod vendor && GO111MODULE=on go mod tidy
 	mv go.mod _go.mod

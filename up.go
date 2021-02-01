@@ -6,13 +6,13 @@ import (
 
 // UpTo migrates up to a specific version.
 func UpTo(db *sql.DB, service, dir string, version int64) error {
-	migrations, err := CollectMigrations(dir, minVersion, version)
+	migrations, err := CollectMigrations(service, dir, minVersion, version)
 	if err != nil {
 		return err
 	}
 
 	for {
-		current, err := GetDBVersion(db)
+		current, err := GetDBVersion(db, service)
 		if err != nil {
 			return err
 		}
@@ -38,13 +38,13 @@ func Up(db *sql.DB, service, dir string) error {
 }
 
 // UpByOne migrates up by a single version.
-func UpByOne(db *sql.DB, dir string) error {
-	migrations, err := CollectMigrations(dir, minVersion, maxVersion)
+func UpByOne(db *sql.DB, service, dir string) error {
+	migrations, err := CollectMigrations(service, dir, minVersion, maxVersion)
 	if err != nil {
 		return err
 	}
 
-	currentVersion, err := GetDBVersion(db)
+	currentVersion, err := GetDBVersion(db, service)
 	if err != nil {
 		return err
 	}
