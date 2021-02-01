@@ -107,7 +107,7 @@ import (
 )
 
 func init() {
-	goose.AddMigration("{{Service}}", up{{.CamelName}}, down{{.CamelName}})
+	goose.AddMigration("{{.Service}}", up{{.CamelName}}, down{{.CamelName}})
 }
 
 func up{{.CamelName}}(tx *sql.Tx) error {
