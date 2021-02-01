@@ -65,7 +65,7 @@ func (pg PostgresDialect) createVersionTableSQL() string {
 }
 
 func (pg PostgresDialect) insertVersionSQL(service string) string {
-	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied, service) VALUES ($1, $2, %s);", TableName(), service)
+	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied, service) VALUES ($1, $2, '%s');", TableName(), service)
 }
 
 func (pg PostgresDialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
