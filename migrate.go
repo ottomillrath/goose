@@ -124,15 +124,15 @@ func (ms Migrations) String() string {
 }
 
 // AddMigration adds a migration.
-func AddMigration(up func(*sql.Tx) error, down func(*sql.Tx) error) {
+func AddMigration(service string, up func(*sql.Tx) error, down func(*sql.Tx) error) {
 	_, filename, _, _ := runtime.Caller(1)
-	AddNamedMigration(filename, up, down)
+	AddNamedMigration(service, filename, up, down)
 }
 
 // AddNamedMigration : Add a named migration.
-func AddNamedMigration(filename string, up func(*sql.Tx) error, down func(*sql.Tx) error) {
+func AddNamedMigration(service string, filename string, up func(*sql.Tx) error, down func(*sql.Tx) error) {
 	v, _ := NumericComponent(filename)
-	migration := &Migration{Version: v, Next: -1, Previous: -1, Registered: true, UpFn: up, DownFn: down, Source: filename}
+	migration := &Migration{Service: service, Version: v, Next: -1, Previous: -1, Registered: true, UpFn: up, DownFn: down, Source: filename}
 
 	if existing, ok := registeredGoMigrations[v]; ok {
 		panic(fmt.Sprintf("failed to add migration %q: version conflicts with %q", filename, existing.Source))

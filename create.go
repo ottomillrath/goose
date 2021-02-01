@@ -12,6 +12,7 @@ import (
 )
 
 type tmplVars struct {
+	Service   string
 	Version   string
 	CamelName string
 }
@@ -70,6 +71,7 @@ func CreateWithTemplate(db *sql.DB, service, dir string, tmpl *template.Template
 	defer f.Close()
 
 	vars := tmplVars{
+		Service:   service,
 		Version:   version,
 		CamelName: camelCase(name),
 	}
@@ -105,7 +107,7 @@ import (
 )
 
 func init() {
-	goose.AddMigration(up{{.CamelName}}, down{{.CamelName}})
+	goose.AddMigration("{{Service}}", up{{.CamelName}}, down{{.CamelName}})
 }
 
 func up{{.CamelName}}(tx *sql.Tx) error {
