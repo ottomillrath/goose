@@ -239,7 +239,8 @@ func versionFilter(v, current, target int64) bool {
 func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
 	rows, err := GetDialect().dbVersionQuery(db, service)
 	if err != nil {
-		return 0, createVersionTable(db, service)
+		ct := (err == sql.ErrNoRows)
+		return 0, createVersionTable(db, service, ct)
 	}
 	defer rows.Close()
 
@@ -285,7 +286,7 @@ func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
 
 // Create the db version table
 // and insert the initial 0 value into it
-func createVersionTable(db *sql.DB, service string) error {
+func createVersionTable(db *sql.DB, service string, createTable bool) error {
 	txn, err := db.Begin()
 	if err != nil {
 		return err
@@ -293,9 +294,11 @@ func createVersionTable(db *sql.DB, service string) error {
 
 	d := GetDialect()
 
-	if _, err := txn.Exec(d.createVersionTableSQL()); err != nil {
-		txn.Rollback()
-		return err
+	if createTable {
+		if _, err := txn.Exec(d.createVersionTableSQL()); err != nil {
+			txn.Rollback()
+			return err
+		}
 	}
 
 	version := 0
