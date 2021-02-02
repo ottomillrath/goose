@@ -239,7 +239,7 @@ func versionFilter(v, current, target int64) bool {
 func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
 	rows, err := GetDialect().dbVersionQuery(db, service)
 	if err != nil {
-		return 0, createVersionTable(db, service, errors.Is(err, sql.ErrNoRows))
+		return 0, createVersionTable(db, service, true)
 	}
 	defer rows.Close()
 
@@ -280,7 +280,21 @@ func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
 		return 0, errors.Wrap(err, "failed to get next row")
 	}
 
-	return 0, ErrNoNextVersion
+	err = createRevisionZero(db, service, 0, true)
+	return 0, err
+}
+
+func createRevisionZero(db *sql.DB, service string, version int, applied bool) error {
+	txn, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	d := GetDialect()
+	if _, err := txn.Exec(d.insertVersionSQL(service), version, applied); err != nil {
+		txn.Rollback()
+		return err
+	}
+	return txn.Commit()
 }
 
 // Create the db version table
@@ -293,16 +307,15 @@ func createVersionTable(db *sql.DB, service string, createTable bool) error {
 
 	d := GetDialect()
 
-	if createTable {
-		if _, err := txn.Exec(d.createVersionTableSQL()); err != nil {
-			txn.Rollback()
-			return err
-		}
+	if _, err := txn.Exec(d.createVersionTableSQL()); err != nil {
+		txn.Rollback()
+		return err
 	}
 
 	version := 0
 	applied := true
-	if _, err := txn.Exec(d.insertVersionSQL(service), version, applied); err != nil {
+	err = createRevisionZero(db, service, version, applied)
+	if err != nil {
 		txn.Rollback()
 		return err
 	}

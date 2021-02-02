@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	dbstring, command := args[1], args[2]
+	dbstring, command := args[1], args[3]
 
 	db, err := goose.OpenDBWithDriver("sqlite3", dbstring)
 	if err != nil {
