@@ -312,15 +312,15 @@ func createVersionTable(db *sql.DB, service string, createTable bool) error {
 		return err
 	}
 
+	err = txn.Commit()
+	if err != nil {
+		return err
+	}
 	version := 0
 	applied := true
 	err = createRevisionZero(db, service, version, applied)
-	if err != nil {
-		txn.Rollback()
-		return err
-	}
 
-	return txn.Commit()
+	return err
 }
 
 // GetDBVersion is an alias for EnsureDBVersion, but returns -1 in error.
