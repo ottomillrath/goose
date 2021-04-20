@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 // Status prints the status of all migrations.
-func Status(db *sql.DB, service, dir string) error {
+func Status(db *gorm.DB, service, dir string) error {
 	// collect all migrations
 	migrations, err := CollectMigrations(service, dir, minVersion, maxVersion)
 	if err != nil {
@@ -32,12 +33,17 @@ func Status(db *sql.DB, service, dir string) error {
 	return nil
 }
 
-func printMigrationStatus(db *sql.DB, version int64, script string, service string) error {
+func printMigrationStatus(db *gorm.DB, version int64, script string, service string) error {
 	q := GetDialect().migrationSQL(service)
 
 	var row MigrationRecord
 
-	err := db.QueryRow(q, version).Scan(&row.TStamp, &row.IsApplied)
+	internalDb, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	err = internalDb.QueryRow(q, version).Scan(&row.TStamp, &row.IsApplied)
 	if err != nil && err != sql.ErrNoRows {
 		return errors.Wrap(err, "failed to query the latest migration")
 	}

@@ -1,7 +1,6 @@
 package goose
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 type tmplVars struct {
@@ -27,7 +27,7 @@ func SetSequential(s bool) {
 }
 
 // Create writes a new blank migration file.
-func CreateWithTemplate(db *sql.DB, service, dir string, tmpl *template.Template, name, migrationType string) error {
+func CreateWithTemplate(db *gorm.DB, service, dir string, tmpl *template.Template, name, migrationType string) error {
 	var version string
 	if sequential {
 		migrations, err := CollectMigrations(service, dir, minVersion, maxVersion)
@@ -84,7 +84,7 @@ func CreateWithTemplate(db *sql.DB, service, dir string, tmpl *template.Template
 }
 
 // Create writes a new blank migration file.
-func Create(db *sql.DB, service, dir, name, migrationType string) error {
+func Create(db *gorm.DB, service, dir, name, migrationType string) error {
 	return CreateWithTemplate(db, service, dir, nil, name, migrationType)
 }
 

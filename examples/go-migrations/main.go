@@ -1,6 +1,6 @@
-// This is custom goose binary with sqlite3 support only.
-
 package main
+
+// This is custom goose binary with sqlite3 support only.
 
 import (
 	"flag"
@@ -9,7 +9,8 @@ import (
 
 	"github.com/ottomillrath/goose"
 
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 var (
@@ -29,13 +30,21 @@ func main() {
 
 	dbstring, command := args[1], args[3]
 
-	db, err := goose.OpenDBWithDriver("sqlite3", dbstring)
+	err := goose.SetDialect("sqlite3")
+	if err != nil {
+		log.Fatalf("goose: failed to set dialect: %v\n", err)
+	}
+	db, err := gorm.Open(sqlite.Open(dbstring), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("goose: failed to open DB: %v\n", err)
 	}
 
 	defer func() {
-		if err := db.Close(); err != nil {
+		internalDb, err := db.DB()
+		if err != nil {
+			log.Fatalf("goose: failed to get internal DB: %v\n", err)
+		}
+		if err := internalDb.Close(); err != nil {
 			log.Fatalf("goose: failed to close DB: %v\n", err)
 		}
 	}()

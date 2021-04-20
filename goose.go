@@ -1,12 +1,13 @@
 package goose
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
+
+	"gorm.io/gorm"
 )
 
-const VERSION = "v2.7.0-rc3"
+const VERSION = "v2.9.0-rc1"
 
 var (
 	minVersion      = int64(0)
@@ -21,7 +22,7 @@ func SetVerbose(v bool) {
 }
 
 // Run runs a goose command.
-func Run(command string, db *sql.DB, service, dir string, args ...string) error {
+func Run(command string, db *gorm.DB, service, dir string, args ...string) error {
 	switch command {
 	case "up":
 		if err := Up(db, service, dir); err != nil {

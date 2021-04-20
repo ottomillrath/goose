@@ -15,7 +15,7 @@ Goose is a database migration tool. Manage your database schema by creating incr
     - Instead, we let you
       [create your own custom goose binary](examples/go-migrations),
       register your Go migration functions explicitly and run complex
-      migrations with your own `*sql.DB` connection
+      migrations with your own `*gorm.DB` connection
     - Go migration functions let you run your code within
       an SQL transaction, if you use the `*sql.Tx` argument
 - The goose pkg is decoupled from the binary:
@@ -225,7 +225,7 @@ language plpgsql;
 1. Create your own goose binary, see [example](./examples/go-migrations)
 2. Import `github.com/ottomillrath/goose`
 3. Register your migration functions
-4. Run goose command, ie. `goose.Up(db *sql.DB, dir string)`
+4. Run goose command, ie. `goose.Up(db *gorm.DB, dir string)`
 
 A [sample Go migration 00002_users_add_email.go file](./examples/go-migrations/00002_rename_root.go) looks like:
 

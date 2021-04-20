@@ -11,7 +11,6 @@ import (
 	"regexp"
 
 	"github.com/go-sql-driver/mysql"
-	_ "github.com/ziutek/mymysql/godrv"
 )
 
 // normalizeMySQLDSN parses the dsn used with the mysql driver to always have

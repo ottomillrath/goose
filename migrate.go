@@ -1,7 +1,6 @@
 package goose
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 var (
@@ -124,13 +124,13 @@ func (ms Migrations) String() string {
 }
 
 // AddMigration adds a migration.
-func AddMigration(service string, up func(*sql.Tx) error, down func(*sql.Tx) error) {
+func AddMigration(service string, up MigrationFn, down MigrationFn) {
 	_, filename, _, _ := runtime.Caller(1)
 	AddNamedMigration(service, filename, up, down)
 }
 
 // AddNamedMigration : Add a named migration.
-func AddNamedMigration(service string, filename string, up func(*sql.Tx) error, down func(*sql.Tx) error) {
+func AddNamedMigration(service string, filename string, up MigrationFn, down MigrationFn) {
 	v, _ := NumericComponent(filename)
 	migration := &Migration{Service: service, Version: v, Next: -1, Previous: -1, Registered: true, UpFn: up, DownFn: down, Source: filename}
 
@@ -236,7 +236,7 @@ func versionFilter(v, current, target int64) bool {
 
 // EnsureDBVersion retrieves the current version for this DB.
 // Create and initialize the DB version table if it doesn't exist.
-func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
+func EnsureDBVersion(db *gorm.DB, service string) (int64, error) {
 	rows, err := GetDialect().dbVersionQuery(db, service)
 	if err != nil {
 		return 0, createVersionTable(db, service, true)
@@ -284,47 +284,47 @@ func EnsureDBVersion(db *sql.DB, service string) (int64, error) {
 	return 0, err
 }
 
-func createRevisionZero(db *sql.DB, service string, version int, applied bool) error {
-	txn, err := db.Begin()
-	if err != nil {
-		return err
+func createRevisionZero(db *gorm.DB, service string, version int, applied bool) error {
+	txn := db.Begin()
+	if txn.Error != nil {
+		return txn.Error
 	}
 	d := GetDialect()
-	if _, err := txn.Exec(d.insertVersionSQL(service), version, applied); err != nil {
+	if r := txn.Exec(d.insertVersionSQL(service), version, applied); r.Error != nil {
 		txn.Rollback()
-		return err
+		return r.Error
 	}
-	return txn.Commit()
+	return txn.Commit().Error
 }
 
 // Create the db version table
 // and insert the initial 0 value into it
-func createVersionTable(db *sql.DB, service string, createTable bool) error {
-	txn, err := db.Begin()
-	if err != nil {
-		return err
+func createVersionTable(db *gorm.DB, service string, createTable bool) error {
+	txn := db.Begin()
+	if txn.Error != nil {
+		return txn.Error
 	}
 
 	d := GetDialect()
 
-	if _, err := txn.Exec(d.createVersionTableSQL()); err != nil {
+	if r := txn.Exec(d.createVersionTableSQL()); r.Error != nil {
 		txn.Rollback()
-		return err
+		return r.Error
 	}
 
-	err = txn.Commit()
-	if err != nil {
-		return err
+	r := txn.Commit()
+	if r.Error != nil {
+		return r.Error
 	}
 	version := 0
 	applied := true
-	err = createRevisionZero(db, service, version, applied)
+	err := createRevisionZero(db, service, version, applied)
 
 	return err
 }
 
 // GetDBVersion is an alias for EnsureDBVersion, but returns -1 in error.
-func GetDBVersion(db *sql.DB, service string) (int64, error) {
+func GetDBVersion(db *gorm.DB, service string) (int64, error) {
 	version, err := EnsureDBVersion(db, service)
 	if err != nil {
 		return -1, err

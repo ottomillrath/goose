@@ -3,6 +3,8 @@ package goose
 import (
 	"database/sql"
 	"fmt"
+
+	"gorm.io/gorm"
 )
 
 // SQLDialect abstracts the details of specific SQL dialects
@@ -12,7 +14,7 @@ type SQLDialect interface {
 	insertVersionSQL(service string) string // sql string to insert the initial version table row
 	deleteVersionSQL(service string) string // sql string to delete version
 	migrationSQL(service string) string     // sql string to retrieve migrations
-	dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error)
+	dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error)
 }
 
 var dialect SQLDialect = &PostgresDialect{}
@@ -68,8 +70,8 @@ func (pg PostgresDialect) insertVersionSQL(service string) string {
 	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied, service) VALUES ($1, $2, '%s');", TableName(), service)
 }
 
-func (pg PostgresDialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT version_id, is_applied from %s where service='%s' ORDER BY id DESC", TableName(), service))
+func (pg PostgresDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
+	rows, err := db.Raw(fmt.Sprintf("SELECT version_id, is_applied from %s where service='%s' ORDER BY id DESC", TableName(), service)).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -107,8 +109,8 @@ func (m MySQLDialect) insertVersionSQL(service string) string {
 	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES (?, ?);", TableName())
 }
 
-func (m MySQLDialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName()))
+func (m MySQLDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
+	rows, err := db.Raw(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName())).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -144,8 +146,8 @@ func (m SqlServerDialect) insertVersionSQL(service string) string {
 	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES (@p1, @p2);", TableName())
 }
 
-func (m SqlServerDialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT version_id, is_applied FROM %s ORDER BY id DESC", TableName()))
+func (m SqlServerDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
+	rows, err := db.Raw(fmt.Sprintf("SELECT version_id, is_applied FROM %s ORDER BY id DESC", TableName())).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -194,8 +196,8 @@ func (m Sqlite3Dialect) insertVersionSQL(service string) string {
 	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES (?, ?);", TableName())
 }
 
-func (m Sqlite3Dialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName()))
+func (m Sqlite3Dialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
+	rows, err := db.Raw(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName())).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -232,8 +234,8 @@ func (rs RedshiftDialect) insertVersionSQL(service string) string {
 	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES ($1, $2);", TableName())
 }
 
-func (rs RedshiftDialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName()))
+func (rs RedshiftDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
+	rows, err := db.Raw(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName())).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -270,8 +272,8 @@ func (m TiDBDialect) insertVersionSQL(service string) string {
 	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES (?, ?);", TableName())
 }
 
-func (m TiDBDialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName()))
+func (m TiDBDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
+	rows, err := db.Raw(fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", TableName())).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -305,8 +307,8 @@ func (m ClickHouseDialect) createVersionTableSQL() string {
 	`
 }
 
-func (m ClickHouseDialect) dbVersionQuery(db *sql.DB, service string) (*sql.Rows, error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT version_id, is_applied FROM %s ORDER BY tstamp DESC LIMIT 1", TableName()))
+func (m ClickHouseDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
+	rows, err := db.Raw(fmt.Sprintf("SELECT version_id, is_applied FROM %s ORDER BY tstamp DESC LIMIT 1", TableName())).Rows()
 	if err != nil {
 		return nil, err
 	}

@@ -1,11 +1,9 @@
 package goose
 
-import (
-	"database/sql"
-)
+import "gorm.io/gorm"
 
 // Version prints the current version of the database.
-func Version(db *sql.DB, service, dir string) error {
+func Version(db *gorm.DB, service, dir string) error {
 	current, err := GetDBVersion(db, service)
 	if err != nil {
 		return err

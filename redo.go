@@ -1,11 +1,9 @@
 package goose
 
-import (
-	"database/sql"
-)
+import "gorm.io/gorm"
 
 // Redo rolls back the most recently applied migration, then runs it again.
-func Redo(db *sql.DB, service, dir string) error {
+func Redo(db *gorm.DB, service, dir string) error {
 	currentVersion, err := GetDBVersion(db, service)
 	if err != nil {
 		return err

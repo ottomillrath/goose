@@ -1,12 +1,13 @@
 package goose
 
 import (
-	"database/sql"
 	"fmt"
+
+	"gorm.io/gorm"
 )
 
 // Down rolls back a single migration from the current version.
-func Down(db *sql.DB, service, dir string) error {
+func Down(db *gorm.DB, service, dir string) error {
 	currentVersion, err := GetDBVersion(db, service)
 	if err != nil {
 		return err
@@ -26,7 +27,7 @@ func Down(db *sql.DB, service, dir string) error {
 }
 
 // DownTo rolls back migrations to a specific version.
-func DownTo(db *sql.DB, service, dir string, version int64) error {
+func DownTo(db *gorm.DB, service, dir string, version int64) error {
 	migrations, err := CollectMigrations(service, dir, minVersion, maxVersion)
 	if err != nil {
 		return err

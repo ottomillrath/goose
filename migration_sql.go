@@ -1,10 +1,10 @@
 package goose
 
 import (
-	"database/sql"
 	"regexp"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 // Run a migration specified in raw SQL.
@@ -15,43 +15,43 @@ import (
 //
 // All statements following an Up or Down directive are grouped together
 // until another direction directive is found.
-func runSQLMigration(db *sql.DB, statements []string, useTx bool, service string, v int64, direction bool) error {
+func runSQLMigration(db *gorm.DB, statements []string, useTx bool, service string, v int64, direction bool) error {
 	if useTx {
 		// TRANSACTION.
 
 		verboseInfo("Begin transaction")
 
-		tx, err := db.Begin()
-		if err != nil {
-			return errors.Wrap(err, "failed to begin transaction")
+		tx := db.Begin()
+		if tx.Error != nil {
+			return errors.Wrap(tx.Error, "failed to begin transaction")
 		}
 
 		for _, query := range statements {
 			verboseInfo("Executing statement: %s\n", clearStatement(query))
-			if _, err = tx.Exec(query); err != nil {
+			if r := tx.Exec(query); r.Error != nil {
 				verboseInfo("Rollback transaction")
 				tx.Rollback()
-				return errors.Wrapf(err, "failed to execute SQL query %q", clearStatement(query))
+				return errors.Wrapf(r.Error, "failed to execute SQL query %q", clearStatement(query))
 			}
 		}
 
 		if direction {
-			if _, err := tx.Exec(GetDialect().insertVersionSQL(service), v, direction); err != nil {
+			if r := tx.Exec(GetDialect().insertVersionSQL(service), v, direction); r.Error != nil {
 				verboseInfo("Rollback transaction")
 				tx.Rollback()
-				return errors.Wrap(err, "failed to insert new goose version")
+				return errors.Wrap(r.Error, "failed to insert new goose version")
 			}
 		} else {
-			if _, err := tx.Exec(GetDialect().deleteVersionSQL(service), v); err != nil {
+			if r := tx.Exec(GetDialect().deleteVersionSQL(service), v); r.Error != nil {
 				verboseInfo("Rollback transaction")
 				tx.Rollback()
-				return errors.Wrap(err, "failed to delete goose version")
+				return errors.Wrap(r.Error, "failed to delete goose version")
 			}
 		}
 
 		verboseInfo("Commit transaction")
-		if err := tx.Commit(); err != nil {
-			return errors.Wrap(err, "failed to commit transaction")
+		if r := tx.Commit(); r.Error != nil {
+			return errors.Wrap(r.Error, "failed to commit transaction")
 		}
 
 		return nil
@@ -60,12 +60,12 @@ func runSQLMigration(db *sql.DB, statements []string, useTx bool, service string
 	// NO TRANSACTION.
 	for _, query := range statements {
 		verboseInfo("Executing statement: %s", clearStatement(query))
-		if _, err := db.Exec(query); err != nil {
-			return errors.Wrapf(err, "failed to execute SQL query %q", clearStatement(query))
+		if r := db.Exec(query); r.Error != nil {
+			return errors.Wrapf(r.Error, "failed to execute SQL query %q", clearStatement(query))
 		}
 	}
-	if _, err := db.Exec(GetDialect().insertVersionSQL(service), v, direction); err != nil {
-		return errors.Wrap(err, "failed to insert new goose version")
+	if r := db.Exec(GetDialect().insertVersionSQL(service), v, direction); r.Error != nil {
+		return errors.Wrap(r.Error, "failed to insert new goose version")
 	}
 
 	return nil

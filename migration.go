@@ -1,7 +1,6 @@
 package goose
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 // MigrationRecord struct.
@@ -19,6 +19,9 @@ type MigrationRecord struct {
 	IsApplied bool // was this a result of up() or down()
 }
 
+// MigrationFn used in go migrations.
+type MigrationFn func(tx *gorm.DB) error
+
 // Migration struct.
 type Migration struct {
 	Service    string
@@ -27,8 +30,8 @@ type Migration struct {
 	Previous   int64  // previous version, -1 if none
 	Source     string // path to .sql script or go file
 	Registered bool
-	UpFn       func(*sql.Tx) error // Up go migration function
-	DownFn     func(*sql.Tx) error // Down go migration function
+	UpFn       MigrationFn // Up go migration function
+	DownFn     MigrationFn // Down go migration function
 }
 
 func (m *Migration) String() string {
@@ -36,7 +39,7 @@ func (m *Migration) String() string {
 }
 
 // Up runs an up migration.
-func (m *Migration) Up(db *sql.DB) error {
+func (m *Migration) Up(db *gorm.DB) error {
 	if err := m.run(db, true); err != nil {
 		return err
 	}
@@ -44,14 +47,14 @@ func (m *Migration) Up(db *sql.DB) error {
 }
 
 // Down runs a down migration.
-func (m *Migration) Down(db *sql.DB) error {
+func (m *Migration) Down(db *gorm.DB) error {
 	if err := m.run(db, false); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *Migration) run(db *sql.DB, direction bool) error {
+func (m *Migration) run(db *gorm.DB, direction bool) error {
 	switch filepath.Ext(m.Source) {
 	case ".sql":
 		f, err := os.Open(m.Source)
@@ -79,9 +82,9 @@ func (m *Migration) run(db *sql.DB, direction bool) error {
 		if !m.Registered {
 			return errors.Errorf("ERROR %v: failed to run Go migration: Go functions must be registered and built into a custom binary (see https://github.com/ottomillrath/goose/tree/master/examples/go-migrations)", m.Source)
 		}
-		tx, err := db.Begin()
-		if err != nil {
-			return errors.Wrap(err, "ERROR failed to begin transaction")
+		tx := db.Begin()
+		if tx.Error != nil {
+			return errors.Wrap(tx.Error, "ERROR failed to begin transaction")
 		}
 
 		fn := m.UpFn
@@ -98,19 +101,19 @@ func (m *Migration) run(db *sql.DB, direction bool) error {
 		}
 
 		if direction {
-			if _, err := tx.Exec(GetDialect().insertVersionSQL(m.Service), m.Version, direction); err != nil {
+			if r := tx.Exec(GetDialect().insertVersionSQL(m.Service), m.Version, direction); r.Error != nil {
 				tx.Rollback()
-				return errors.Wrap(err, "ERROR failed to execute transaction")
+				return errors.Wrap(r.Error, "ERROR failed to execute transaction")
 			}
 		} else {
-			if _, err := tx.Exec(GetDialect().deleteVersionSQL(m.Service), m.Version); err != nil {
+			if r := tx.Exec(GetDialect().deleteVersionSQL(m.Service), m.Version); r.Error != nil {
 				tx.Rollback()
-				return errors.Wrap(err, "ERROR failed to execute transaction")
+				return errors.Wrap(r.Error, "ERROR failed to execute transaction")
 			}
 		}
 
-		if err := tx.Commit(); err != nil {
-			return errors.Wrap(err, "ERROR failed to commit transaction")
+		if r := tx.Commit(); r.Error != nil {
+			return errors.Wrap(r.Error, "ERROR failed to commit transaction")
 		}
 
 		if fn != nil {

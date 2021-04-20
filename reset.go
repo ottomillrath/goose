@@ -1,14 +1,14 @@
 package goose
 
 import (
-	"database/sql"
 	"sort"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 // Reset rolls back all migrations
-func Reset(db *sql.DB, service, dir string) error {
+func Reset(db *gorm.DB, service, dir string) error {
 	migrations, err := CollectMigrations(service, dir, minVersion, maxVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to collect migrations")
@@ -31,7 +31,7 @@ func Reset(db *sql.DB, service, dir string) error {
 	return nil
 }
 
-func dbMigrationsStatus(db *sql.DB, service string) (map[int64]bool, error) {
+func dbMigrationsStatus(db *gorm.DB, service string) (map[int64]bool, error) {
 	rows, err := GetDialect().dbVersionQuery(db, service)
 	if err != nil {
 		return map[int64]bool{}, nil

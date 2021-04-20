@@ -1,11 +1,9 @@
 package goose
 
-import (
-	"database/sql"
-)
+import "gorm.io/gorm"
 
 // UpTo migrates up to a specific version.
-func UpTo(db *sql.DB, service, dir string, version int64) error {
+func UpTo(db *gorm.DB, service, dir string, version int64) error {
 	migrations, err := CollectMigrations(service, dir, minVersion, version)
 	if err != nil {
 		return err
@@ -33,12 +31,12 @@ func UpTo(db *sql.DB, service, dir string, version int64) error {
 }
 
 // Up applies all available migrations.
-func Up(db *sql.DB, service, dir string) error {
+func Up(db *gorm.DB, service, dir string) error {
 	return UpTo(db, service, dir, maxVersion)
 }
 
 // UpByOne migrates up by a single version.
-func UpByOne(db *sql.DB, service, dir string) error {
+func UpByOne(db *gorm.DB, service, dir string) error {
 	migrations, err := CollectMigrations(service, dir, minVersion, maxVersion)
 	if err != nil {
 		return err
