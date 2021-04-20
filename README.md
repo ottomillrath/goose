@@ -6,23 +6,14 @@ Goose is a database migration tool. Manage your database schema by creating incr
 
 ### Goals of this fork
 
-`github.com/ottomillrath/goose` is a fork of `bitbucket.org/liamstask/goose` with the following changes:
-- No config files
-- [Default goose binary](./cmd/goose/main.go) can migrate SQL files only
-- Go migrations:
-    - We don't `go build` Go migrations functions on-the-fly
-      from within the goose binary
-    - Instead, we let you
-      [create your own custom goose binary](examples/go-migrations),
-      register your Go migration functions explicitly and run complex
-      migrations with your own `*gorm.DB` connection
-    - Go migration functions let you run your code within
-      an SQL transaction, if you use the `*sql.Tx` argument
-- The goose pkg is decoupled from the binary:
-    - goose pkg doesn't register any SQL drivers anymore,
-      thus no driver `panic()` conflict within your codebase!
-    - goose pkg doesn't have any vendor dependencies anymore
-- We use timestamped migrations by default but recommend a hybrid approach of using timestamps in the development process and sequential versions in production.
+`github.com/ottomillrath/goose` is a fork of `github.com/pressly/goose` with the following changes:
+* Add `service` parameter to uniquely identify and separate various migration contexts
+* Change the internal connection to an instance of `*gorm.DB`, from [GORM](https://github.com/go-gorm/gorm)
+* Use go modules
+
+_The CLI tool is not compatible yet (WIP)._
+
+_The rest of this README is the same as the one in the parent repository._
 
 # Install
 
