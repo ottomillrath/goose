@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ottomillrath/goose"
+	"github.com/ottomillrath/goose/v2"
 	"gorm.io/gorm"
 )
 

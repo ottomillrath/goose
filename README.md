@@ -226,7 +226,7 @@ package migrations
 import (
 	"database/sql"
 
-	"github.com/ottomillrath/goose"
+	"github.com/ottomillrath/goose/v2"
 )
 
 func init() {
