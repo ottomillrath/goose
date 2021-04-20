@@ -2,8 +2,6 @@ module github.com/ottomillrath/goose/cmd/goose
 
 go 1.16
 
-replace github.com/ottomillrath/goose => ../../
-
 require (
 	github.com/ClickHouse/clickhouse-go v1.4.3
 	github.com/denisenkom/go-mssqldb v0.10.0
