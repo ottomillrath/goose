@@ -67,7 +67,7 @@ func (pg PostgresDialect) createVersionTableSQL() string {
 }
 
 func (pg PostgresDialect) insertVersionSQL(service string) string {
-	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied, service) VALUES ($1, $2, '%s');", TableName(), service)
+	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied, service) VALUES (?, ?, '%s');", TableName(), service)
 }
 
 func (pg PostgresDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
@@ -143,7 +143,7 @@ func (m SqlServerDialect) createVersionTableSQL() string {
 }
 
 func (m SqlServerDialect) insertVersionSQL(service string) string {
-	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES (@p1, @p2);", TableName())
+	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES (?, ?);", TableName())
 }
 
 func (m SqlServerDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
@@ -231,7 +231,7 @@ func (rs RedshiftDialect) createVersionTableSQL() string {
 }
 
 func (rs RedshiftDialect) insertVersionSQL(service string) string {
-	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES ($1, $2);", TableName())
+	return fmt.Sprintf("INSERT INTO %s (version_id, is_applied) VALUES (?, ?);", TableName())
 }
 
 func (rs RedshiftDialect) dbVersionQuery(db *gorm.DB, service string) (*sql.Rows, error) {
