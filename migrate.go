@@ -20,7 +20,7 @@ var (
 	// MaxVersion is the maximum allowed version.
 	MaxVersion int64 = 9223372036854775807 // max(int64)
 
-	registeredGoMigrations = map[int64]*Migration{}
+	registeredGoMigrationsByService = make(map[string]map[int64]*Migration)
 )
 
 // Migrations slice.
@@ -131,6 +131,12 @@ func AddMigration(service string, up MigrationFn, down MigrationFn) {
 
 // AddNamedMigration : Add a named migration.
 func AddNamedMigration(service string, filename string, up MigrationFn, down MigrationFn) {
+	registeredGoMigrations, ok := registeredGoMigrationsByService[service]
+	if !ok {
+		registeredGoMigrations = make(map[int64]*Migration)
+		registeredGoMigrationsByService[service] = registeredGoMigrations
+	}
+
 	v, _ := NumericComponent(filename)
 	migration := &Migration{Service: service, Version: v, Next: -1, Previous: -1, Registered: true, UpFn: up, DownFn: down, Source: filename}
 
@@ -146,6 +152,12 @@ func AddNamedMigration(service string, filename string, up MigrationFn, down Mig
 func CollectMigrations(service, dirpath string, current, target int64) (Migrations, error) {
 	if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("%s directory does not exist", dirpath)
+	}
+
+	registeredGoMigrations, ok := registeredGoMigrationsByService[service]
+	if !ok {
+		registeredGoMigrations = make(map[int64]*Migration)
+		registeredGoMigrationsByService[service] = registeredGoMigrations
 	}
 
 	var migrations Migrations
